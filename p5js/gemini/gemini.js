@@ -6,12 +6,37 @@ async function generateContent(prompt, model = "gemini-1.5-flash") {
   let res = await fetch(REQUEST_URL, {
     method: "POST",
     body: JSON.stringify({
-      contents: [ prompt ],
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: String(prompt) } // Ensure this is a string
+          ]
+        }
+      ]
     }),
     headers: {
-      "Content-type": "application/json; charset=UTF-8",
+      "Content-Type": "application/json",
     },
   });
+
+  if (!res.ok) {
+    let errorText = await res.text(); // Get error details
+    console.error(`API Error: ${res.status} - ${res.statusText}\n${errorText}`);
+    return `Error ${res.status}: ${res.statusText}`;
+  }
+
   let json = await res.json();
-  return json.candidates[0].content.parts[0].text;
+
+  // Extract AI response properly
+  let responseText = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+  if (!responseText) {
+    console.error("Invalid API response:", json);
+    return "Sorry, I couldn't process that request.";
+  }
+
+  return responseText;
 }
+
+
